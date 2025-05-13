@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>login</title>
+    <link rel="stylesheet" href="css/login_page.css">
+    <script src="js/login_page.js" defer></script>
+</head>
+<body>
+  <div class="background">
+
+  <section class="layers">
+		<div class="layers__container">
+			<div class="layers__item layer-1" style="background-image: url(img/layer-1.jpg);"></div>
+			<div class="layers__item layer-2" style="background-image: url(img/layer-2.png);"></div>
+			<div class="layers__item layer-5" style="background-image: url(img/layer-5.png);"></div>
+			<div class="layers__item layer-6" style="background-image: url(img/layer-6.png);"></div>
+		</div>
+	</section>
+
+  
+
+
+  </div>
+    
+    <div class="slider-container">
+        <div class="slider-arrow left-arrow">
+            <div class="arrow-circle">←</div>
+        </div>
+        
+        <div class="slider-wrapper">
+            <div class="slider">
+                <!-- Слайд 1 (Sign In) -->
+                <div class="slide">
+                    <div class="form-container">
+                        <h2>sign in</h2>
+                        <div class="input-group">
+                            <label for="name1">name</label>
+                            <input type="text" id="name1" class="input-field">
+                        </div>
+                        <div class="input-group">
+                            <label for="password1">password</label>
+                            <input type="password" id="password1" class="input-field">
+                        </div>
+                        <button class="entry-button">entry</button>
+                    </div>
+                </div>
+                
+                <!-- Слайд 2 (Login) -->
+                <div class="slide active">
+                    <div class="form-container">
+                        <h2>login</h2>
+                        <div class="input-group">
+                            <label for="name2">name</label>
+                            <input type="text" id="name2" class="input-field">
+                        </div>
+                        <div class="input-group">
+                            <label for="password2">password</label>
+                            <input type="password" id="password2" class="input-field">
+                        </div>
+                        <button class="entry-button">entry</button>
+                    </div>
+                </div>
+                
+                <!-- Слайд 3 (Anonymous) -->
+                <div class="slide">
+                    <div class="form-container anonymous">
+                        <h2>anonymous</h2>
+                        <p class="anonymous-text">Attention, when choosing an anonymous login, your chats may not be saved</p>
+                        <button class="entry-button">entry</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="slider-dots">
+                <span class="dot" data-slide="0"></span>
+                <span class="dot active" data-slide="1"></span>
+                <span class="dot" data-slide="2"></span>
+            </div>
+        </div>
+        
+        <div class="slider-arrow right-arrow">
+            <div class="arrow-circle">→</div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
