@@ -15,7 +15,7 @@
     font-display: swap;
 }
 @font-face {
-	font-family: merriweather-italic-3d;
+	font-family: squids game;
 	src: url(../fonts/Game\ Of\ Squids.woff2);
 }
 body {
@@ -91,13 +91,13 @@ body {
 }
 .hero-content__p {
 	text-transform: none;
-	font-family: merriweather-italic-3d;
+	font-family: squids game;
 	letter-spacing: normal;
 	font-size: calc(var(--index) * .73);
 	line-height: 3;
 }
 .button-start {
-    font-family: merriweather-italic-3d;
+    font-family: squids game;
     font-weight: 600;
     text-transform: uppercase;
     font-size: calc(var(--index) * .71);
