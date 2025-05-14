@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram-like Chat</title>
+    <title>Note Chat</title>
     <link rel="stylesheet" href="css/main_page.css">
     <script src="js/main_page.js" defer></script>
 </head>
 <body class="dark-mode">
-    <!-- Icons and Backgrounds -->
     <div class="assets" style="display:none;">
         <img id="search-icon-light" src="img/search.png" alt="Search Icon">
         <img id="search-icon-dark" src="img/search_white.png" alt="Search Icon White">
@@ -18,7 +17,6 @@
         <img id="bg-dark" src="img/background.jpg" alt="Dark Background">
     </div>
 
-    <!-- Sidebar with chat list -->
     <div class="sidebar" id="sidebar">
         <div class="search-bar">
             <span class="search-icon"></span>
@@ -26,33 +24,16 @@
             <button class="settings-btn" id="settingsBtn"></button>
         </div>
         <div class="chat-list" id="chatList">
-            <div class="chat-item">
-                <div class="chat-item-avatar">T</div>
+            <div class="chat-item active-chat">
+                <div class="chat-item-avatar">N</div>
                 <div class="chat-item-info">
-                    <div class="chat-item-name">Telegram</div>
-                    <div class="chat-item-preview">Welcome to Telegram!</div>
-                    <div class="chat-item-path">C:\Users\Admin\Documents\Telegram #dark</div>
-                </div>
-            </div>
-            <div class="chat-item">
-                <div class="chat-item-avatar">W</div>
-                <div class="chat-item-info">
-                    <div class="chat-item-name">Work Chat</div>
-                    <div class="chat-item-preview">Meeting at 3pm</div>
-                    <div class="chat-item-path">C:\Work\Projects\Chats #light</div>
-                </div>
-            </div>
-            <div class="chat-item">
-                <div class="chat-item-avatar">F</div>
-                <div class="chat-item-info">
-                    <div class="chat-item-name">Family Group</div>
-                    <div class="chat-item-preview">Mom: Call me later</div>
-                    <div class="chat-item-path">D:\Personal\Family #dark</div>
+                    <div class="chat-item-name">Note</div>
+                    <div class="chat-item-preview">No messages yet</div>
+                    <div class="chat-item-path">C:\Note\Messages #dark</div>
                 </div>
             </div>
         </div>
         
-        <!-- Settings panel -->
         <div class="settings-panel" id="settingsPanel">
             <div class="settings-item">
                 <div class="settings-title">Name</div>
@@ -65,23 +46,25 @@
                     <span class="slider"></span>
                 </label>
             </div>
+            <div class="settings-item">
+                <button class="exit-btn" id="exitBtn">EXIT</button>
+            </div>
         </div>
     </div>
     
-    <!-- Chat area -->
     <div class="chat-area">
         <div class="chat-header">
             <button class="back-btn" id="backBtn">←</button>
-            <div class="chat-title">Selected Chat</div>
+            <div class="chat-title">Note</div>
             <div></div>
         </div>
         
         <div class="messages" id="messages">
-            <!-- Messages will appear here -->
+            <div class="message message-in">Welcome to Note Chat!</div>
         </div>
         
         <div class="message-input">
-            <input type="text" placeholder="Type a message" id="messageInput">
+            <textarea placeholder="Type a message" id="messageInput" rows="1" maxlength="1000"></textarea>
             <button class="send-btn" id="sendBtn">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                     <path d="M22 2L11 13" stroke="white" stroke-width="2" stroke-linecap="round"/>
@@ -92,5 +75,35 @@
     </div>
 
     <div class="overlay" id="overlay"></div>
+
+    <div class="error-notification" id="errorNotification">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 8V12M12 16H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" 
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span>Message limit exceeded!</span>
+    </div>
+
+    <button class="add-chat-btn" id="addChatBtn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 6V12M12 12V18M12 12H18M12 12H6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+    </button>
+
+    <div class="new-chat-modal" id="newChatModal">
+        <div class="modal-content">
+            <button class="close-modal-btn" id="closeModalBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+            <h3>Create New Chat</h3>
+            <input type="text" placeholder="Chat name" id="newChatName">
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="cancelChatBtn">Cancel</button>
+                <button class="create-btn" id="createChatBtn">Create</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
