@@ -5,72 +5,59 @@ document.addEventListener('mousemove', e => {
         --move-y: ${(e.clientY - window.innerHeight / 2) * .01}deg;
         `
     })
-})
+});
 
-
-
-
-
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
     const slider = document.querySelector('.slider');
     const slides = document.querySelectorAll('.slide');
     const dots = document.querySelectorAll('.dot');
     const leftArrow = document.querySelector('.left-arrow');
     const rightArrow = document.querySelector('.right-arrow');
+    const sliderWrapper = document.querySelector('.slider-wrapper');
     
     let currentSlide = 1;
-    const slideCount = slides.length;
-    function initSlider() {
-        updateSlider();
-    }
-    
-    function updateSlider() {
+    const totalSlides = slides.length;
+
+    const updateSlider = () => {
         slider.style.transform = `translateX(-${currentSlide * 100}%)`;
-        
-        slides.forEach((slide, index) => {
-            slide.classList.toggle('active', index === currentSlide);
-        });
-        
-        dots.forEach((dot, index) => {
-            dot.classList.toggle('active', index === currentSlide);
-        });
-    }
-    
-    function nextSlide() {
-        currentSlide = (currentSlide + 1) % slideCount;
+        slides.forEach((slide, i) => slide.classList.toggle('active', i === currentSlide));
+        dots.forEach((dot, i) => dot.classList.toggle('active', i === currentSlide));
+    };
+
+    const nextSlide = () => {
+        currentSlide = (currentSlide + 1) % totalSlides;
         updateSlider();
-    }
-    
-    function prevSlide() {
-        currentSlide = (currentSlide - 1 + slideCount) % slideCount;
+    };
+
+    const prevSlide = () => {
+        currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
         updateSlider();
-    }
-    
-    function goToSlide(index) {
+    };
+
+    const goToSlide = index => {
         currentSlide = index;
         updateSlider();
-    }
-    
-    rightArrow.addEventListener('click', nextSlide);
-    leftArrow.addEventListener('click', prevSlide);
-    
+    };
+
+    leftArrow?.addEventListener('click', prevSlide);
+    rightArrow?.addEventListener('click', nextSlide);
+
     dots.forEach(dot => {
-        dot.addEventListener('click', function() {
-            const slideIndex = parseInt(this.getAttribute('data-slide'));
-            goToSlide(slideIndex);
-        });
+        dot.addEventListener('click', () => goToSlide(parseInt(dot.dataset.slide)));
     });
 
-    initSlider();
+    let touchStartX = 0;
+    let touchEndX = 0;
 
+    sliderWrapper.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+    }, {passive: true});
+
+    sliderWrapper.addEventListener('touchend', e => {
+        touchEndX = e.changedTouches[0].screenX;
+        if (touchStartX - touchEndX > 50) nextSlide();
+        if (touchEndX - touchStartX > 50) prevSlide();
+    }, {passive: true});
+
+    updateSlider();
 });
-
-
-document.addEventListener('mousemove', e => {
-	Object.assign(document.documentElement, {
-		style: `
-		--move-x: ${(e.clientX - window.innerWidth / 2) * -.005}deg;
-		--move-y: ${(e.clientY - window.innerHeight / 2) * .01}deg;
-		`
-	})
-})
