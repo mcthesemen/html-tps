@@ -63,6 +63,11 @@ document.addEventListener('DOMContentLoaded', function() {
         DOM.createChatBtn.addEventListener('click', createNewChat);
         DOM.closeModalBtn.addEventListener('click', closeNewChatModal);
         DOM.cancelChatBtn.addEventListener('click', closeNewChatModal);
+        
+        // Предотвращаем всплытие клика из списка чатов
+        DOM.chatList.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
     }
 
     function setInitialAssets() {
@@ -106,6 +111,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function handleChatListClick(e) {
+        // Закрываем настройки при клике в любом месте списка чатов
+        if (DOM.settingsPanel.classList.contains('open')) {
+            DOM.settingsPanel.classList.remove('open');
+            DOM.overlay.classList.remove('active');
+            updateAddChatButtonVisibility();
+            return;
+        }
+        
         const chatItem = e.target.closest('.chat-item');
         if (!chatItem) return;
         
