@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const DOM = {
+    const elements = {
         sidebar: document.getElementById('sidebar'),
         settingsBtn: document.getElementById('settingsBtn'),
         settingsPanel: document.getElementById('settingsPanel'),
@@ -21,23 +21,28 @@ document.addEventListener('DOMContentLoaded', function() {
         createChatBtn: document.getElementById('createChatBtn'),
         closeModalBtn: document.getElementById('closeModalBtn'),
         cancelChatBtn: document.getElementById('cancelChatBtn'),
-        chatArea: document.querySelector('.chat-area'),
         exitBtn: document.getElementById('exitBtn')
     };
 
-    const MAX_MESSAGE_LENGTH = 1000;
-    const PREVIEW_LENGTH = 35;
-    const ERROR_DISPLAY_TIME = 3000;
-
-    let chatData = {
-        'Note': {
-            messages: ['Welcome to Note Chat!'],
-            path: 'C:\\Note\\Messages',
-            unread: 0
-        }
+    const constants = {
+        MAX_MESSAGE_LENGTH: 1000,
+        PREVIEW_LENGTH: 35,
+        ERROR_DISPLAY_TIME: 3000
     };
 
-    let inChatListView = window.innerWidth > 768;
+    const state = {
+        chatData: {
+            'Note': {
+                messages: ['Welcome to Note Chat!'],
+                path: 'C:\\Note\\Messages',
+                unread: 0
+            }
+        },
+        inChatListView: window.innerWidth > 768,
+        currentChat: 'Note',
+        speechSynthesis: window.speechSynthesis || null,
+        voices: []
+    };
 
     function init() {
         setInitialAssets();
@@ -45,49 +50,51 @@ document.addEventListener('DOMContentLoaded', function() {
         loadSavedTheme();
         renderMessages();
         updateAddChatButtonVisibility();
+        loadVoices();
     }
 
     function setupEventListeners() {
-        DOM.settingsBtn.addEventListener('click', handleSettingsToggle);
-        DOM.overlay.addEventListener('click', closeAllModals);
-        DOM.chatList.addEventListener('click', handleChatListClick);
-        DOM.darkModeToggle.addEventListener('change', toggleDarkMode);
-        DOM.backBtn.addEventListener('click', toggleSidebar);
-        DOM.sendBtn.addEventListener('click', sendMessage);
-        DOM.messageInput.addEventListener('input', handleInput);
-        DOM.messageInput.addEventListener('keydown', handleKeyPress);
-        DOM.exitBtn.addEventListener('click', exitApp);
+
+        elements.settingsBtn.addEventListener('click', toggleSettings);
+        elements.overlay.addEventListener('click', closeAllModals);
+        elements.darkModeToggle.addEventListener('change', toggleDarkMode);
+        elements.backBtn.addEventListener('click', toggleSidebar);
+        elements.sendBtn.addEventListener('click', sendMessage);
+        elements.exitBtn.addEventListener('click', exitApp);
+ 
+        elements.messageInput.addEventListener('input', handleInput);
+        elements.messageInput.addEventListener('keydown', handleKeyPress);
+        
+        elements.chatList.addEventListener('click', handleChatListClick);
+        
+        elements.addChatBtn.addEventListener('click', showNewChatModal);
+        elements.createChatBtn.addEventListener('click', createNewChat);
+        elements.closeModalBtn.addEventListener('click', closeNewChatModal);
+        elements.cancelChatBtn.addEventListener('click', closeNewChatModal);
+        
         window.addEventListener('resize', handleResize);
-        
-        DOM.addChatBtn.addEventListener('click', showNewChatModal);
-        DOM.createChatBtn.addEventListener('click', createNewChat);
-        DOM.closeModalBtn.addEventListener('click', closeNewChatModal);
-        DOM.cancelChatBtn.addEventListener('click', closeNewChatModal);
-        
-        // Предотвращаем всплытие клика из списка чатов
-        DOM.chatList.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
     }
 
     function setInitialAssets() {
-        const isDarkMode = DOM.body.classList.contains('dark-mode');
-        const assets = {
-            searchIcon: document.querySelector('.search-icon'),
-            settingsIcon: document.querySelector('.settings-btn'),
-            messagesBg: document.querySelector('.messages')
-        };
-
-        assets.searchIcon.style.backgroundImage = `url('${isDarkMode ? 'img/search_white.png' : 'img/search.png'}')`;
-        assets.settingsIcon.style.backgroundImage = `url('${isDarkMode ? 'img/settings_white.png' : 'img/settings.png'}')`;
-        assets.messagesBg.style.backgroundImage = `url('${isDarkMode ? 'img/background.jpg' : 'img/background_white.jpg'}')`;
+        const isDarkMode = elements.body.classList.contains('dark-mode');
         
-        DOM.chatPath.textContent = `${chatData.Note.path} #${isDarkMode ? 'dark' : 'light'}`;
+        document.querySelector('.search-icon').style.backgroundImage = 
+            `url('${isDarkMode ? 'img/search_white.png' : 'img/search.png'}')`;
+        document.querySelector('.settings-btn').style.backgroundImage = 
+            `url('${isDarkMode ? 'img/settings_white.png' : 'img/settings.png'}')`;
+        
+        // Фон сообщений
+        document.querySelector('.messages').style.backgroundImage = 
+            `url('${isDarkMode ? 'img/background.jpg' : 'img/background_white.jpg'}')`;
+        
+        // Путь текущего чата
+        elements.chatPath.textContent = 
+            `${state.chatData[state.currentChat].path} #${isDarkMode ? 'dark' : 'light'}`;
     }
 
     function toggleDarkMode() {
-        DOM.body.classList.toggle('dark-mode');
-        const isDarkMode = DOM.body.classList.contains('dark-mode');
+        elements.body.classList.toggle('dark-mode');
+        const isDarkMode = elements.body.classList.contains('dark-mode');
         localStorage.setItem('darkMode', isDarkMode);
         setInitialAssets();
         updateAddChatButtonVisibility();
@@ -96,49 +103,114 @@ document.addEventListener('DOMContentLoaded', function() {
     function loadSavedTheme() {
         const savedTheme = localStorage.getItem('darkMode');
         if (savedTheme === 'false') {
-            DOM.body.classList.remove('dark-mode');
-            DOM.darkModeToggle.checked = false;
+            elements.body.classList.remove('dark-mode');
+            elements.darkModeToggle.checked = false;
         }
     }
 
-    function showError(message) {
-        DOM.errorNotification.querySelector('span').textContent = message;
-        DOM.errorNotification.classList.add('active');
+    function renderMessages() {
+        const messages = state.chatData[state.currentChat].messages;
         
-        setTimeout(() => {
-            DOM.errorNotification.classList.remove('active');
-        }, ERROR_DISPLAY_TIME);
+        elements.messagesContainer.innerHTML = messages.map(msg => {
+            const isIncoming = msg === 'Welcome to Note Chat!';
+            return `
+                <div class="message ${isIncoming ? 'message-in' : 'message-out'}">
+                    <div class="message-text">${msg}</div>
+                    <button class="voice-over-btn" title="Озвучить сообщение" data-text="${escapeHtml(msg)}">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 1C14.2091 1 16 2.79086 16 5V12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12V5C8 2.79086 9.79086 1 12 1Z" fill="currentColor"/>
+                            <path d="M4 9C4 8.44772 4.44772 8 5 8C5.55228 8 6 8.44772 6 9V12C6 15.3137 8.68629 18 12 18C15.3137 18 18 15.3137 18 12V9C18 8.44772 18.4477 8 19 8C19.5523 8 20 8.44772 20 9V12C20 16.0796 16.9463 19.446 13 19.9381V21H17C17.5523 21 18 21.4477 18 22C18 22.5523 17.5523 23 17 23H7C6.44772 23 6 22.5523 6 22C6 21.4477 6.44772 21 7 21H11V19.9381C7.05369 19.446 4 16.0796 4 12V9Z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                </div>
+            `;
+        }).join('');
+        
+        document.querySelectorAll('.voice-over-btn').forEach(btn => {
+            btn.addEventListener('click', speakMessage);
+        });
+        
+        scrollToBottom();
     }
 
-    function handleChatListClick(e) {
-        // Закрываем настройки при клике в любом месте списка чатов
-        if (DOM.settingsPanel.classList.contains('open')) {
-            DOM.settingsPanel.classList.remove('open');
-            DOM.overlay.classList.remove('active');
-            updateAddChatButtonVisibility();
+    function speakMessage(e) {
+        const text = e.currentTarget.getAttribute('data-text');
+        if (!text || !state.speechSynthesis) {
+            showError('Voice over is not available');
             return;
         }
         
-        const chatItem = e.target.closest('.chat-item');
-        if (!chatItem) return;
+        state.speechSynthesis.cancel();
         
-        if (window.innerWidth <= 768) {
-            DOM.sidebar.classList.remove('open');
-            DOM.overlay.classList.remove('active');
-            DOM.settingsPanel.classList.remove('open');
-            inChatListView = false;
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        utterance.rate = 1;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+        
+        if (state.voices.length > 0) {
+            utterance.voice = state.voices.find(v => v.default) || state.voices[0];
         }
         
-        document.querySelectorAll('.chat-item').forEach(i => 
-            i.classList.remove('active-chat'));
-        chatItem.classList.add('active-chat');
+        state.speechSynthesis.speak(utterance);
+    }
+
+    function loadVoices() {
+        if (!state.speechSynthesis) return;
         
-        updateAddChatButtonVisibility();
+        state.speechSynthesis.onvoiceschanged = () => {
+            state.voices = state.speechSynthesis.getVoices();
+        };
+        
+        state.voices = state.speechSynthesis.getVoices();
+    }
+
+    function sendMessage() {
+        const messageText = elements.messageInput.value.trim();
+        
+        if (messageText.length > constants.MAX_MESSAGE_LENGTH) {
+            showError(`Message limit exceeded by ${messageText.length - constants.MAX_MESSAGE_LENGTH} symbols`);
+            return;
+        }
+        
+        if (!messageText) return;
+
+        state.chatData[state.currentChat].messages.push(messageText);
+        renderMessages();
+        updateChatPreview(messageText);
+        resetInputField();
+    }
+
+    function updateChatPreview(text) {
+        elements.chatPreview.textContent = text.length > constants.PREVIEW_LENGTH ? 
+            `${text.substring(0, constants.PREVIEW_LENGTH)}...` : text;
+    }
+
+    function resetInputField() {
+        elements.messageInput.value = '';
+        elements.messageInput.style.height = '40px';
+    }
+
+    function scrollToBottom() {
+        elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
     }
 
     function handleInput() {
         autoResizeTextarea(this);
         enforceMaxLength(this);
+    }
+
+    function autoResizeTextarea(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+
+    function enforceMaxLength(field) {
+        if (field.value.length > constants.MAX_MESSAGE_LENGTH) {
+            const overflow = field.value.length - constants.MAX_MESSAGE_LENGTH;
+            field.value = field.value.substring(0, constants.MAX_MESSAGE_LENGTH);
+            showError(`Character limit exceeded by ${overflow} symbols`);
+        }
     }
 
     function handleKeyPress(e) {
@@ -148,123 +220,98 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function autoResizeTextarea(textarea) {
-        textarea.style.height = 'auto';
-        textarea.style.height = `${textarea.scrollHeight}px`;
-    }
-
-    function enforceMaxLength(field) {
-        if (field.value.length > MAX_MESSAGE_LENGTH) {
-            const overflow = field.value.length - MAX_MESSAGE_LENGTH;
-            field.value = field.value.substring(0, MAX_MESSAGE_LENGTH);
-            showError(`Character limit exceeded by ${overflow} symbols`);
-        }
-    }
-
-    function renderMessages() {
-        DOM.messagesContainer.innerHTML = chatData.Note.messages
-            .map(msg => `<div class="message ${msg === 'Welcome to Note Chat!' ? 
-                'message-in' : 'message-out'}">${msg}</div>`)
-            .join('');
-    }
-
-    function sendMessage() {
-        const messageText = DOM.messageInput.value.trim();
+    function showError(message) {
+        elements.errorNotification.querySelector('span').textContent = message;
+        elements.errorNotification.classList.add('active');
         
-        if (messageText.length > MAX_MESSAGE_LENGTH) {
-            showError(`Message limit exceeded by ${messageText.length - MAX_MESSAGE_LENGTH} symbols`);
+        setTimeout(() => {
+            elements.errorNotification.classList.remove('active');
+        }, constants.ERROR_DISPLAY_TIME);
+    }
+
+    function handleChatListClick(e) {
+        if (elements.settingsPanel.classList.contains('open')) {
+            toggleSettings();
             return;
         }
         
-        if (!messageText) return;
-
-        chatData.Note.messages.push(messageText);
-        renderMessages();
-        updateChatPreview(messageText);
-        resetInputField();
-        scrollToBottom();
-    }
-
-    function updateChatPreview(text) {
-        DOM.chatPreview.textContent = text.length > PREVIEW_LENGTH ? 
-            `${text.substring(0, PREVIEW_LENGTH)}...` : text;
-    }
-
-    function resetInputField() {
-        DOM.messageInput.value = '';
-        DOM.messageInput.style.height = '40px';
-    }
-
-    function scrollToBottom() {
-        DOM.messagesContainer.scrollTop = DOM.messagesContainer.scrollHeight;
-    }
-
-    function handleSettingsToggle(e) {
-        e.stopPropagation();
-        DOM.settingsPanel.classList.toggle('open');
-        DOM.overlay.classList.toggle('active');
+        const chatItem = e.target.closest('.chat-item');
+        if (!chatItem) return;
+        
+        if (window.innerWidth <= 768) {
+            toggleSidebar();
+        }
+        
+        document.querySelectorAll('.chat-item').forEach(i => 
+            i.classList.remove('active-chat'));
+        chatItem.classList.add('active-chat');
+        
         updateAddChatButtonVisibility();
     }
 
-    function closeAllModals() {
-        DOM.newChatModal.classList.remove('active');
-        DOM.settingsPanel.classList.remove('open');
-        DOM.overlay.classList.remove('active');
-        DOM.sidebar.classList.remove('open');
-        inChatListView = window.innerWidth > 768;
+    function toggleSettings() {
+        elements.settingsPanel.classList.toggle('open');
+        elements.overlay.classList.toggle('active');
         updateAddChatButtonVisibility();
     }
 
     function toggleSidebar() {
-        DOM.sidebar.classList.toggle('open');
-        inChatListView = DOM.sidebar.classList.contains('open');
+        elements.sidebar.classList.toggle('open');
+        state.inChatListView = elements.sidebar.classList.contains('open');
+        updateAddChatButtonVisibility();
+    }
+
+    function closeAllModals() {
+        elements.newChatModal.classList.remove('active');
+        elements.settingsPanel.classList.remove('open');
+        elements.overlay.classList.remove('active');
+        elements.sidebar.classList.remove('open');
+        state.inChatListView = window.innerWidth > 768;
         updateAddChatButtonVisibility();
     }
 
     function updateAddChatButtonVisibility() {
         const isMobile = window.innerWidth <= 768;
-        const isSettingsPanelOpen = DOM.settingsPanel.classList.contains('open');
+        const isSettingsPanelOpen = elements.settingsPanel.classList.contains('open');
         
-        if ((isMobile && DOM.sidebar.classList.contains('open') && !isSettingsPanelOpen) || 
+        if ((isMobile && elements.sidebar.classList.contains('open') && !isSettingsPanelOpen) || 
             (!isMobile && !isSettingsPanelOpen)) {
-            DOM.addChatBtn.style.display = 'flex';
+            elements.addChatBtn.style.display = 'flex';
         } else {
-            DOM.addChatBtn.style.display = 'none';
+            elements.addChatBtn.style.display = 'none';
         }
     }
 
     function showNewChatModal() {
-        DOM.newChatModal.classList.add('active');
-        DOM.overlay.classList.add('active');
-        DOM.newChatName.focus();
+        elements.newChatModal.classList.add('active');
+        elements.overlay.classList.add('active');
+        elements.newChatName.focus();
     }
 
     function closeNewChatModal() {
-        DOM.newChatModal.classList.remove('active');
-        DOM.overlay.classList.remove('active');
+        elements.newChatModal.classList.remove('active');
+        elements.overlay.classList.remove('active');
+        elements.newChatName.value = '';
     }
 
     function createNewChat() {
-        const chatName = DOM.newChatName.value.trim();
+        const chatName = elements.newChatName.value.trim();
         
         if (!chatName) {
             showError('Please enter chat name');
             return;
         }
         
-        if (chatData[chatName]) {
+        if (state.chatData[chatName]) {
             showError('Chat with this name already exists');
             return;
         }
         
-        const newChat = {
+        state.chatData[chatName] = {
             messages: [],
             path: `C:\\Note\\${chatName}`,
             unread: 0
         };
-        
-        chatData[chatName] = newChat;
-        
         const chatItem = document.createElement('div');
         chatItem.className = 'chat-item';
         chatItem.innerHTML = `
@@ -272,12 +319,11 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="chat-item-info">
                 <div class="chat-item-name">${chatName}</div>
                 <div class="chat-item-preview">No messages yet</div>
-                <div class="chat-item-path">${newChat.path} #${DOM.body.classList.contains('dark-mode') ? 'dark' : 'light'}</div>
+                <div class="chat-item-path">${state.chatData[chatName].path} #${elements.body.classList.contains('dark-mode') ? 'dark' : 'light'}</div>
             </div>
         `;
         
-        DOM.chatList.appendChild(chatItem);
-        DOM.newChatName.value = '';
+        elements.chatList.appendChild(chatItem);
         closeNewChatModal();
     }
 
@@ -287,8 +333,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function handleResize() {
         const shouldBeOpen = window.innerWidth > 768;
-        inChatListView = shouldBeOpen || DOM.sidebar.classList.contains('open');
+        state.inChatListView = shouldBeOpen || elements.sidebar.classList.contains('open');
         updateAddChatButtonVisibility();
+    }
+
+    function escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
     init();
